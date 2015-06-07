@@ -1,0 +1,18 @@
+# maven / sbt
+target
+.cache
+
+# python
+*.pyc
+venv
+
+# eclipse
+.classpath
+.project
+.pydevproject
+.settings
+
+#testing
+lib
+.ccm
+metastore_db
