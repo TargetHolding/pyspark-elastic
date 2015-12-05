@@ -15,7 +15,7 @@ setup(
 	name='pyspark_elastic',
 	maintainer='Frens Jan Rumph',
 	maintainer_email='frens.jan.rumph@target-holding.nl',
-	version='0.1.0',
+	version='0.2.0',
 	description='Utilities to asssist in working with Elastic Serach and PySpark.',
 	long_description=f('../README.md').read(),
 	url='https://github.com/TargetHolding/pyspark-elastic',

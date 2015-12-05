@@ -1,9 +1,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
-#	 http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
+# 	 http://www.apache.org/licenses/LICENSE-2.0
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -35,29 +35,29 @@ def as_java_object(gateway, obj):
 	"""
 
 	t = type(obj)
-	
+
 	if issubclass(t, (bool, int, float, str)):
 		return obj
-	
+
 	elif issubclass(t, datetime):
 		timestamp = int(mktime(obj.timetuple()) * 1000)
 		return gateway.jvm.java.util.Date(timestamp)
-	
+
 	elif issubclass(t, (dict, Mapping)):
 		hash_map = gateway.jvm.java.util.HashMap()
 		for (k, v) in obj.items(): hash_map[k] = v
 		return hash_map
-	
+
 	elif issubclass(t, (set, Set)):
 		hash_set = gateway.jvm.java.util.HashSet()
 		for e in obj: hash_set.add(e)
 		return hash_set
-	
+
 	elif issubclass(t, (list, Iterable)):
 		array_list = gateway.jvm.java.util.ArrayList()
 		for e in obj: array_list.append(e)
 		return array_list
-	
+
 	else:
 		return obj
 
