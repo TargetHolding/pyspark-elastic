@@ -1,3 +1,3 @@
 [submodule "pyspark-util"]
 	path = pyspark-util
-	url = https://github.com/TargetHolding/pyspark-elastic.git
+	url = https://github.com/TargetHolding/pyspark-util.git
