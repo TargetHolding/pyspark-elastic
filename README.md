@@ -2,6 +2,7 @@ PySpark Elastic
 =================
 
 [![Build Status](https://travis-ci.org/TargetHolding/pyspark-elastic.svg)](https://travis-ci.org/TargetHolding/pyspark-elastic)
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/2b7c6849703a4aedb69c071b20049702)](https://www.codacy.com/app/frensjan/pyspark-elastic)
 
 PySpark Elastic provides python support for Apache Spark's Resillient Distributed Datasets from Elastic Search documents using [Elasticsearch Hadoop](https://www.elastic.co/products/hadoop) within PySpark, both in the interactive shell and in python programmes submitted with spark-submit.
 
