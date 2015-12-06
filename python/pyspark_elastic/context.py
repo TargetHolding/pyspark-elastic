@@ -26,8 +26,8 @@ def monkey_patch_sc(sc):
 
 class EsSparkContext(pyspark.context.SparkContext):
 
-	def esRDD(self, resource_read=None, query=None, **kwargs):
+	def esRDD(self, resource_read=None, query='', **kwargs):
 		return self.esJsonRDD(resource_read, query, **kwargs).mapValues(loads)
 
-	def esJsonRDD(self, resource_read=None, query=None, **kwargs):
+	def esJsonRDD(self, resource_read=None, query='', **kwargs):
 		return EsRDD(self, resource_read, query, **kwargs)
