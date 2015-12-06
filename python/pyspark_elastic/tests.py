@@ -1,5 +1,5 @@
-from json import dumps
-import time
+from datetime import datetime
+import json
 import unittest
 
 from elasticsearch.helpers import bulk
@@ -20,7 +20,9 @@ class PysparkElasticTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sc = EsSparkContext(conf=SparkConf().setAppName("PySpark Elastic Test"))
+        conf = SparkConf()
+        conf.set('spark.ui.showConsoleProgress', 'false')
+        cls.sc = EsSparkContext(conf=conf.setAppName("PySpark Elastic Test"))
 
     @classmethod
     def tearDownClass(cls):
@@ -34,13 +36,15 @@ class PysparkElasticTestCase(unittest.TestCase):
 
         index.doc_type(self.TestDoc)
 
+        self.resource = self.index._name + '/' + self.TestDoc._doc_type.name
+
     def tearDown(self):
         self.index.delete()
 
 
-    def rdd(self, query='', doc_type=None, cache=True):
+    def rdd(self, query='', doc_type=None, cache=True, **kwargs):
         doc_type = doc_type or self.TestDoc._doc_type.name
-        rdd = self.sc.esRDD('pyspark_elastic/' + doc_type, query)
+        rdd = self.sc.esRDD(self.index._name + '/' + doc_type, query, **kwargs)
         if cache:
             rdd = rdd.cache()
         return rdd
@@ -58,7 +62,7 @@ class ReadTests(PysparkElasticTestCase):
 
         actions = [d.to_dict(include_meta=True) for d in self.docs]
 
-        inserted, errors = bulk(connections.get_connection(), actions=actions)
+        inserted, errors = bulk(connections.get_connection(), actions=actions, refresh=True)
         self.assertEqual(inserted, len(actions))
         self.assertEqual(len(errors), 0)
 
@@ -69,13 +73,13 @@ class ReadTests(PysparkElasticTestCase):
         self.assertEqual(len(doc), 2)
 
         k, v = doc
-        self.assertEqual(type(k), unicode)
-        self.assertEqual(type(v), dict)
+        self.assertIsInstance(k, basestring)
+        self.assertIsInstance(v, dict)
         self.assertEqual(len(v), 1)
         self.assertTrue('title' in v)
 
         title = v['title']
-        self.assertEqual(type(title), unicode)
+        self.assertIsInstance(title, basestring)
 
     def test_take(self):
         self.assertEquals(len(self.rdd().take(10)), 10)
@@ -84,37 +88,43 @@ class ReadTests(PysparkElasticTestCase):
         self.assertEquals(self.rdd().count(), len(self.docs))
 
     def test_read_metadata(self):
-        pass
-        # es.read.metadata.version
-        # es.read.metadata.field
-        # es.read.metadata.field
+        read = self.rdd(
+            read_metadata=True,
+            read_metadata_field='_meta',
+            read_metadata_version=True,
+        ).collect()
 
-    def test_empty_fields(self):
-        pass
-        # es.index.read.missing.as.empty
-        # es.field.read.empty.as.null
+        for _, doc in read:
+            self.assertIn('_meta', doc)
+            meta = doc['_meta']
+            self.assertIn('_score', meta)
+            self.assertIn('_index', meta)
+            self.assertIn('_type', meta)
+            self.assertIn('_id', meta)
+            self.assertIn('_version', meta)
 
     def test_default_resource(self):
-        # es.resource
-        pass
+        self.assertEqual(self.rdd(resource=self.resource).count(), len(self.docs))
+
+    # es.index.read.missing.as.empty
+    # def test_read_missing_index(self):
+
+    # es.field.read.empty.as.null
+    # def test_empty_fields(self):
 
 
-class QueryTests(PysparkElasticTestCase):
-    def test_uri_query(self):
-        # test querying with ?uri_query
-        pass
+# class QueryTests(PysparkElasticTestCase):
+    # test querying with ?uri_query
+    # def test_uri_query(self):
 
-    def test_dsl_query(self):
-        # test querying with { dsl }
-        pass
+    # test querying with { dsl }
+    # def test_dsl_query(self):
 
-    def test_ext_res_query(self):
-        # test querying with an external json file containing the query dsl
-        pass
+    # test querying with an external json file containing the query dsl
+    # def test_ext_res_query(self):
 
-    def test_query_check(self):
-        # es.field.read.validate.presence
-        pass
+    # es.field.read.validate.presence
+    # def test_query_check(self):
 
 
 class WriteTests(PysparkElasticTestCase):
@@ -123,129 +133,199 @@ class WriteTests(PysparkElasticTestCase):
         self.docs = self.sc.parallelize(xrange(100)).map(lambda i: dict(title='doc-' + str(i)))
 
     def assertWritten(self, docs=None):
-        time.sleep(5)
         docs = docs or self.docs
         if isinstance(docs, RDD):
             docs = docs.collect()
         read = self.rdd().collect()
         self.assertEqual(set(str(d[1]['title']) for d in read), set(str(d['title']) for d in docs))
+        return read
 
 
     def test_save_dicts(self):
-        self.docs.saveToEs(self.index._name + '/' + self.TestDoc._doc_type.name)
+        self.docs.saveToEs(self.resource)
         self.assertWritten()
 
     def test_save_json(self):
-        self.docs.map(dumps).saveJsonToEs(self.index._name + '/' + self.TestDoc._doc_type.name)
+        self.docs.map(json.dumps).saveJsonToEs(self.resource)
         self.assertWritten()
 
-    def test_create(self):
-        pass
-
-    def test_update(self):
-        pass
-
-    def test_upsert(self):
-        pass
+    def test_save_binary_json(self):
+        self.docs.map(lambda d: json.dumps(d).encode()).saveJsonToEs(self.resource)
+        self.assertWritten()
 
     def test_save_with_id(self):
-        pass
-    #     (self.docs
-    #         .zipWithIndex()
-    #         # .map(lambda (d, i): dict(id=i, **d))
-    #         .map(lambda (d, i): (i, d))
-    #         .saveToEs(
-    #             self.index._name + '/' + self.TestDoc._doc_type.name,
-    #             **{'es.mapping.id':'id'}
-    #         )
-    #     )
-    #     self.assertWritten()
+        self.docs = self.sc.parallelize(xrange(100)).map(
+            lambda i: dict(
+                id=str(i),
+                title='doc-' + str(i),
+            )
+        )
 
-    def test_save_with_parent(self):
-        pass
+        self.docs.saveToEs(
+            self.index._name + '/' + self.TestDoc._doc_type.name,
+            mapping_id='id'
+        )
 
-    def test_save_with_version(self):
-        pass
+        self.assertWritten()
 
-    def test_save_with_routing(self):
-        pass
+        written = self.docs.collect()
+        read = self.rdd().collectAsMap()
 
-    def test_save_with_ttl(self):
-        pass
+        self.assertEqual(len(written), len(read))
+        for doc in written:
+            self.assertEqual(str(doc['title']), read[doc['id']]['title'])
 
-    def test_save_with_timestamp(self):
-        pass
-
-    def test_save_include_fields(self):
-        # es.mapping.include
-        pass
+#     def test_create(self):
+#         pass
+#
+#     def test_update(self):
+#         pass
+#
+#     def test_upsert(self):
+#         pass
+#
+#     def test_save_with_parent(self):
+#         pass
+#
+#     def test_save_with_version(self):
+#         pass
+#
+#     def test_save_with_routing(self):
+#         pass
+#
+#     def test_save_with_ttl(self):
+#         pass
+#
+#     def test_save_with_timestamp(self):
+#         pass
+#
+#     def test_save_include_fields(self):
+#         # es.mapping.include
+#         pass
+#
 
     def test_save_exclude_fields(self):
-        # es.mapping.exclude
-        pass
+        docs = [
+            dict(title='1', body='a'),
+            dict(title='2', body='b'),
+            dict(title='1', body='c'),
+        ]
 
+        self.sc.parallelize(docs).saveToEs(self.resource, mapping_exclude='body')
+        read = self.rdd().collect()
+        self.assertEqual(len(read), 3)
+        for doc in read:
+            self.assertNotIn('body', doc)
 
-    def test_save_with_script(self):
-        # es.update.script
-        # es.update.script.lang
-        # es.update.script.params
-        pass
-
-    def test_autocreate_index(self):
-        # es.index.auto.create
-        pass
+#     def test_save_with_script(self):
+#         # es.update.script
+#         # es.update.script.lang
+#         # es.update.script.params
+#         pass
+#
+    # TODO
+    # def test_autocreate_index(self):
+    #     index = Index('pyspark_elastic_non_existing')
+    #     index.delete(ignore=404)
+    #
+    #     def save():
+    #         self.docs.saveToEs(index._name + '/doc_type', index_auto_create='no')
+    #     self.assertRaises(Exception, save)
 
     def test_default_resource(self):
-        # es.resource
-        pass
+        self.docs.saveToEs(resource=self.resource)
+        self.assertWritten()
 
     def test_dynamic_resource(self):
-        # es.resource.write
-        # es.resource.write with format {field-name} for dynamic resource
-        # the above with pattern in form {@timestamp:YYYY.MM.dd}
-        pass
+        Index('test-1').delete(ignore=404)
+        Index('test-2').delete(ignore=404)
 
-    def test_serialization_configuration(self):
-        # es.batch.size.bytes
-        # es.batch.size.entries
-        # es.batch.write.refresh
-        # es.batch.write.retry.count
-        # es.batch.write.retry.wait
-        pass
+        docs1 = [
+            dict(idx='test-1', body='something'),
+            dict(idx='test-1', body='else'),
+        ]
+        docs2 = [
+            dict(idx='test-2', body='abra'),
+            dict(idx='test-2', body='ca'),
+            dict(idx='test-2', body='dabra'),
+        ]
+
+        self.sc.parallelize(docs1 + docs2).saveToEs(resource_write='{idx}/docs')
+        self.assertEqual(self.sc.esRDD('test-1/docs').count(), 2)
+        self.assertEqual(self.sc.esRDD('test-2/docs').count(), 3)
+
+        self.assertEqual(
+            set(d['body'] for d in self.sc.esRDD('test-1/docs').collectAsMap().values()),
+            set(d['body'] for d in docs1)
+        )
+
+    def test_dynamic_resource_timestamp(self):
+        Index('test-2015-11').delete(ignore=404)
+        Index('test-2015-12').delete(ignore=404)
+
+        docs_nov = [
+            dict(timestamp=datetime.fromtimestamp(1448363875).isoformat(), body='Lorem'),
+            dict(timestamp=datetime.fromtimestamp(1448363876).isoformat(), body='ipsum'),
+            dict(timestamp=datetime.fromtimestamp(1448363877).isoformat(), body='dolor'),
+        ]
+
+        docs_dec = [
+            dict(timestamp=datetime.fromtimestamp(1449400621).isoformat(), body='fee'),
+            dict(timestamp=datetime.fromtimestamp(1449400622).isoformat(), body='fi'),
+            dict(timestamp=datetime.fromtimestamp(1449400623).isoformat(), body='fo'),
+            dict(timestamp=datetime.fromtimestamp(1449400623).isoformat(), body='fum'),
+        ]
+
+        self.sc.parallelize(docs_nov + docs_dec).saveToEs(resource_write='test-{timestamp:YYYY-MM}/docs')
+        self.assertEqual(self.sc.esRDD('test-2015-11/docs').count(), 3)
+        self.assertEqual(self.sc.esRDD('test-2015-12/docs').count(), 4)
+
+        self.assertEqual(
+            set(d['body'] for d in self.sc.esRDD('test-2015-11/docs').collectAsMap().values()),
+            set(d['body'] for d in docs_nov)
+        )
+
+    # def test_serialization_configuration(self):
+    #     # es.batch.size.bytes
+    #     # es.batch.size.entries
+    #     # es.batch.write.refresh
+    #     # es.batch.write.retry.count
+    #     # es.batch.write.retry.wait
+    #     pass
 
 
-class ConfTests(PysparkElasticTestCase):
-
-    def test_timeout(self):
-        # es.http.timeout
-        pass
-
-    def test_retries(self):
-        # es.http.timeout
-        pass
-
-    def test_scroll_keepalive(self):
-        # es.scroll.keepalive
-        pass
-
-    def test_scroll_size(self):
-        # es.scroll.size
-        pass
-
-    def test_task_timeout(self):
-        # es.action.heart.beat.lead
-        pass
-
-
-class SecurityTests(PysparkElasticTestCase):
-    def test_authentication(self):
-        # es.net.http.auth.user
-        # es.net.http.auth.pass
-        pass
+# class ConfTests(PysparkElasticTestCase):
+#
+#     def test_timeout(self):
+#         # es.http.timeout
+#         pass
+#
+#     def test_retries(self):
+#         # es.http.timeout
+#         pass
+#
+#     def test_scroll_keepalive(self):
+#         # es.scroll.keepalive
+#         pass
+#
+#     def test_scroll_size(self):
+#         # es.scroll.size
+#         pass
+#
+#     def test_task_timeout(self):
+#         # es.action.heart.beat.lead
+#         pass
+#
+#
+# class SecurityTests(PysparkElasticTestCase):
+#     def test_authentication(self):
+#         # es.net.http.auth.user
+#         # es.net.http.auth.pass
+#         pass
 
 
 
 if __name__ == '__main__':
     unittest.main()
-    # suite = unittest.TestLoader().loadTestsFromTestCase(WriteTests)
+    # suite = unittest.TestLoader().loadTestsFromTestCase(ReadTests)
     # unittest.TextTestRunner().run(suite)
