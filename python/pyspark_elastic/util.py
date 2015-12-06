@@ -30,7 +30,8 @@ def make_es_config(d, **kwargs):
 
 def add_es_config(cfg, d):
     for k, v in d.items():
-        cfg[make_es_param(k)] = str(v)
+        if v is not None:
+            cfg[make_es_param(k)] = str(v)
 
 def make_es_param(k):
     return 'es.' + k.replace('_', '.')
