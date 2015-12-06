@@ -12,7 +12,6 @@
 
 
 from functools import partial
-from json import loads
 
 import pyspark.context
 from pyspark_elastic.rdd import EsRDD
@@ -27,7 +26,7 @@ def monkey_patch_sc(sc):
 class EsSparkContext(pyspark.context.SparkContext):
 
 	def esRDD(self, resource_read=None, query='', **kwargs):
-		return self.esJsonRDD(resource_read, query, **kwargs).mapValues(loads)
+		return self.esJsonRDD(resource_read, query, **kwargs).loads()
 
 	def esJsonRDD(self, resource_read=None, query='', **kwargs):
 		return EsRDD(self, resource_read, query, **kwargs)

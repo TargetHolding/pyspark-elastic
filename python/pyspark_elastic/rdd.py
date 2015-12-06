@@ -11,10 +11,10 @@
 # limitations under the License.
 
 from json import dumps
+import json
 
 from pyspark.rdd import RDD
-
-from pyspark_elastic.types import as_java_object
+from pyspark_elastic.types import as_java_object, AttrDict
 from pyspark_elastic.util import helper, make_es_config
 
 
@@ -25,8 +25,13 @@ class EsRDD(RDD):
 		jrdd = helper(ctx).esJsonRDD(ctx._jsc, kwargs)
 		super(EsRDD, self).__init__(jrdd, ctx)
 
-def saveToEs(rdd, resource=None, **kwargs):
-	saveJsonToEs(rdd.map(dumps), resource, **kwargs)
+	def loads(self, attr_dict=True):
+		loads = AttrDict.loads if attr_dict else json.loads
+		return self.mapValues(loads)
+
+def saveToEs(rdd, resource_write=None, **kwargs):
+	json = rdd.map(dumps)
+	saveJsonToEs(json, resource_write, **kwargs)
 
 def saveJsonToEs(rdd, resource_write=None, **kwargs):
 	kwargs = make_es_config(kwargs, resource_write=resource_write)

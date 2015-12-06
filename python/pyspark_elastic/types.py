@@ -2,7 +2,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-# 	 http://www.apache.org/licenses/LICENSE-2.0
+#      http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,52 +13,77 @@
 from collections import Set, Iterable, Mapping
 from datetime import datetime
 from time import mktime
+import json
 
 
 def as_java_array(gateway, java_type, iterable):
-	"""Creates a Java array from a Python iterable, using the given p4yj gateway"""
+    """Creates a Java array from a Python iterable, using the given p4yj gateway"""
 
-	java_type = gateway.jvm.__getattr__(java_type)
-	lst = list(iterable)
-	arr = gateway.new_array(java_type, len(lst))
+    java_type = gateway.jvm.__getattr__(java_type)
+    lst = list(iterable)
+    arr = gateway.new_array(java_type, len(lst))
 
-	for i, e in enumerate(lst):
-		jobj = as_java_object(gateway, e)
-		arr[i] = jobj
+    for i, e in enumerate(lst):
+        jobj = as_java_object(gateway, e)
+        arr[i] = jobj
 
-	return arr
+    return arr
 
 
 def as_java_object(gateway, obj):
-	"""Converts a limited set of types to their corresponding types in java. Supported are 'primitives' (which aren't
-	converted), datetime.datetime and the set-, dict- and iterable-like types.
-	"""
+    """Converts a limited set of types to their corresponding types in java. Supported are 'primitives' (which aren't
+    converted), datetime.datetime and the set-, dict- and iterable-like types.
+    """
 
-	t = type(obj)
+    t = type(obj)
 
-	if issubclass(t, (bool, int, float, str)):
-		return obj
+    if issubclass(t, (bool, int, float, str)):
+        return obj
 
-	elif issubclass(t, datetime):
-		timestamp = int(mktime(obj.timetuple()) * 1000)
-		return gateway.jvm.java.util.Date(timestamp)
+    elif issubclass(t, datetime):
+        timestamp = int(mktime(obj.timetuple()) * 1000)
+        return gateway.jvm.java.util.Date(timestamp)
 
-	elif issubclass(t, (dict, Mapping)):
-		hash_map = gateway.jvm.java.util.HashMap()
-		for (k, v) in obj.items(): hash_map[k] = v
-		return hash_map
+    elif issubclass(t, (dict, Mapping)):
+        hash_map = gateway.jvm.java.util.HashMap()
+        for (k, v) in obj.items(): hash_map[k] = v
+        return hash_map
 
-	elif issubclass(t, (set, Set)):
-		hash_set = gateway.jvm.java.util.HashSet()
-		for e in obj: hash_set.add(e)
-		return hash_set
+    elif issubclass(t, (set, Set)):
+        hash_set = gateway.jvm.java.util.HashSet()
+        for e in obj: hash_set.add(e)
+        return hash_set
 
-	elif issubclass(t, (list, Iterable)):
-		array_list = gateway.jvm.java.util.ArrayList()
-		for e in obj: array_list.append(e)
-		return array_list
+    elif issubclass(t, (list, Iterable)):
+        array_list = gateway.jvm.java.util.ArrayList()
+        for e in obj: array_list.append(e)
+        return array_list
 
-	else:
-		return obj
+    else:
+        return obj
 
 
+class AttrDict(dict):
+    def __init__(self, *args, **kwargs):
+        for arg in args:
+            self.update(arg)
+        self.update(kwargs)
+
+    def __getattr__(self, k):
+        try:
+            return self[k]
+        except KeyError:
+            raise AttributeError('no such attribute %r' % k)
+
+    def __setattr__(self, k, v):
+        self[k] = v
+
+    def __delattr__(self, k):
+        try:
+            del self[k]
+        except KeyError:
+            raise AttributeError('no such attribute %r' % k)
+
+    @classmethod
+    def loads(cls, s):
+        return json.loads(s, object_hook=cls)
