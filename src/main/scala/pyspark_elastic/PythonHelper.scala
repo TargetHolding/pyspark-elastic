@@ -1,17 +1,18 @@
 package pyspark_elastic
 
 import java.util.{ Map => JMap }
-import scala.collection.JavaConversions._
-import scala.collection.mutable
-import org.apache.spark.api.java._
-import org.elasticsearch.spark._
-import org.elasticsearch.spark.rdd.api.java.JavaEsSpark
-import pyspark_util.Conversions._
-import pyspark_util.Pickling._
-import java.util.HashMap
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.{ ES_RESOURCE_WRITE, ES_RESOURCE_READ, ES_QUERY }
-import pyspark_util.Pickling
+
+import scala.collection.JavaConversions.mapAsScalaMap
+
+import org.apache.spark.api.java.JavaRDD
+import org.apache.spark.api.java.JavaSparkContext
 import org.apache.spark.rdd.RDD
+import org.elasticsearch.spark.sparkContextFunctions
+import org.elasticsearch.spark.sparkStringJsonRDDFunctions
+
+import pyspark_util.Pickling
+import pyspark_util.Pickling.toPickleableRDD
+import pyspark_util.Pickling.toUnpickleableRDD
 
 class PythonHelper() {
 
