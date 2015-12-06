@@ -28,5 +28,8 @@ class EsSparkContext(pyspark.context.SparkContext):
 	def esRDD(self, resource_read=None, query='', **kwargs):
 		return self.esJsonRDD(resource_read, query, **kwargs).loads()
 
+	def esObjRDD(self, resource_read=None, query='', **kwargs):
+		return self.esJsonRDD(resource_read, query, **kwargs).loads(attr_dict=True)
+
 	def esJsonRDD(self, resource_read=None, query='', **kwargs):
 		return EsRDD(self, resource_read, query, **kwargs)

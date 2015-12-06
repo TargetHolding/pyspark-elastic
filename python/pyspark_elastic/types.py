@@ -12,8 +12,8 @@
 
 from collections import Set, Iterable, Mapping
 from datetime import datetime
+from json import loads
 from time import mktime
-import json
 
 
 def as_java_array(gateway, java_type, iterable):
@@ -64,11 +64,6 @@ def as_java_object(gateway, obj):
 
 
 class AttrDict(dict):
-    def __init__(self, *args, **kwargs):
-        for arg in args:
-            self.update(arg)
-        self.update(kwargs)
-
     def __getattr__(self, k):
         try:
             return self[k]
@@ -84,6 +79,6 @@ class AttrDict(dict):
         except KeyError:
             raise AttributeError('no such attribute %r' % k)
 
-    @classmethod
-    def loads(cls, s):
-        return json.loads(s, object_hook=cls)
+    @staticmethod
+    def loads(s):
+        return loads(s, object_hook=AttrDict)
