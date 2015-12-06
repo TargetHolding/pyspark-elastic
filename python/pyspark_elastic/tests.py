@@ -83,6 +83,38 @@ class ReadTests(PysparkElasticTestCase):
     def test_count(self):
         self.assertEquals(self.rdd().count(), len(self.docs))
 
+    def test_read_metadata(self):
+        pass
+        # es.read.metadata.version
+        # es.read.metadata.field
+        # es.read.metadata.field
+
+    def test_empty_fields(self):
+        pass
+        # es.index.read.missing.as.empty
+        # es.field.read.empty.as.null
+
+    def test_default_resource(self):
+        # es.resource
+        pass
+
+
+class QueryTests(PysparkElasticTestCase):
+    def test_uri_query(self):
+        # test querying with ?uri_query
+        pass
+
+    def test_dsl_query(self):
+        # test querying with { dsl }
+        pass
+
+    def test_ext_res_query(self):
+        # test querying with an external json file containing the query dsl
+        pass
+
+    def test_query_check(self):
+        # es.field.read.validate.presence
+        pass
 
 
 class WriteTests(PysparkElasticTestCase):
@@ -107,9 +139,17 @@ class WriteTests(PysparkElasticTestCase):
         self.docs.map(dumps).saveJsonToEs(self.index._name + '/' + self.TestDoc._doc_type.name)
         self.assertWritten()
 
+    def test_create(self):
+        pass
 
-    # TODO
-    # def test_save_with_id(self):
+    def test_update(self):
+        pass
+
+    def test_upsert(self):
+        pass
+
+    def test_save_with_id(self):
+        pass
     #     (self.docs
     #         .zipWithIndex()
     #         # .map(lambda (d, i): dict(id=i, **d))
@@ -120,6 +160,89 @@ class WriteTests(PysparkElasticTestCase):
     #         )
     #     )
     #     self.assertWritten()
+
+    def test_save_with_parent(self):
+        pass
+
+    def test_save_with_version(self):
+        pass
+
+    def test_save_with_routing(self):
+        pass
+
+    def test_save_with_ttl(self):
+        pass
+
+    def test_save_with_timestamp(self):
+        pass
+
+    def test_save_include_fields(self):
+        # es.mapping.include
+        pass
+
+    def test_save_exclude_fields(self):
+        # es.mapping.exclude
+        pass
+
+
+    def test_save_with_script(self):
+        # es.update.script
+        # es.update.script.lang
+        # es.update.script.params
+        pass
+
+    def test_autocreate_index(self):
+        # es.index.auto.create
+        pass
+
+    def test_default_resource(self):
+        # es.resource
+        pass
+
+    def test_dynamic_resource(self):
+        # es.resource.write
+        # es.resource.write with format {field-name} for dynamic resource
+        # the above with pattern in form {@timestamp:YYYY.MM.dd}
+        pass
+
+    def test_serialization_configuration(self):
+        # es.batch.size.bytes
+        # es.batch.size.entries
+        # es.batch.write.refresh
+        # es.batch.write.retry.count
+        # es.batch.write.retry.wait
+        pass
+
+
+class ConfTests(PysparkElasticTestCase):
+
+    def test_timeout(self):
+        # es.http.timeout
+        pass
+
+    def test_retries(self):
+        # es.http.timeout
+        pass
+
+    def test_scroll_keepalive(self):
+        # es.scroll.keepalive
+        pass
+
+    def test_scroll_size(self):
+        # es.scroll.size
+        pass
+
+    def test_task_timeout(self):
+        # es.action.heart.beat.lead
+        pass
+
+
+class SecurityTests(PysparkElasticTestCase):
+    def test_authentication(self):
+        # es.net.http.auth.user
+        # es.net.http.auth.pass
+        pass
+
 
 
 if __name__ == '__main__':
