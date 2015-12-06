@@ -20,3 +20,16 @@ def helper(ctx):
             .loadClass("pyspark_elastic.PythonHelper").newInstance()
 
     return _helper
+
+def make_es_config(d, **kwargs):
+    cfg = {}
+    add_es_config(cfg, d)
+    add_es_config(cfg, kwargs)
+    return cfg
+
+def add_es_config(cfg, d):
+    for k, v in d.items():
+        cfg[make_es_param(k)] = v
+
+def make_es_param(k):
+    return 'es.' + k.replace('_', '.')

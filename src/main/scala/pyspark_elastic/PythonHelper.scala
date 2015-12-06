@@ -17,26 +17,16 @@ class PythonHelper() {
 
   Pickling.register()
 
-  def esJsonRDD(sc: JavaSparkContext, resource: String, query: String, cfg: JMap[String, String]) = {
-    val rc = readConfig(resource, query, cfg)
-    JavaRDD.fromRDD(sc.sc.esJsonRDD(rc).pickle())
+  def esJsonRDD(sc: JavaSparkContext, cfg: JMap[String, String]) = {
+    JavaRDD.fromRDD(sc.sc.esJsonRDD(config(cfg)).pickle())
   }
 
-  def saveJsonToEs(rdd: JavaRDD[Array[Byte]], resource: String, cfg: JMap[String, String]) = {
-    val wc = writeConfig(resource, cfg)
-    rdd.rdd.unpickle().asInstanceOf[RDD[String]].saveJsonToEs(wc)
+  def saveJsonToEs(rdd: JavaRDD[Array[Byte]], cfg: JMap[String, String]) = {
+    rdd.rdd.unpickle().asInstanceOf[RDD[String]].saveJsonToEs(config(cfg))
   }
 
-  def readConfig(resource: String, query: String, cfg: JMap[String, String]) = {
-    mutable.Map[String, String]() + (ES_RESOURCE_READ -> resource) + (ES_QUERY -> query) ++ nonEmpty(cfg)
-  }
-
-  def writeConfig(resource: String, cfg: JMap[String, String]) = {
-    mutable.Map[String, String]() + (ES_RESOURCE_WRITE -> resource) ++ nonEmpty(cfg)
-  }
-
-  private[this] def nonEmpty(cfg: JMap[String, String]) = {
-    if (cfg == null) {
+  private[this] def config(cfg: JMap[String, String]) = {
+    if (cfg != null) {
       mapAsScalaMap(cfg)
     } else {
       Map[String, String]()

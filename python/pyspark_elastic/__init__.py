@@ -20,8 +20,8 @@ import inspect
 import pyspark.context
 import pyspark.rdd
 
-from .context import EsSparkContext, monkey_patch_sc
-from .rdd import saveToEs, saveJsonToEs
+from pyspark_elastic.context import EsSparkContext, monkey_patch_sc
+from pyspark_elastic.rdd import saveToEs, saveJsonToEs
 
 
 __all__ = [

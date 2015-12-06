@@ -14,19 +14,27 @@ from json import dumps
 
 from pyspark.rdd import RDD
 
-from .types import as_java_object
-from .util import helper
+from pyspark_elastic.types import as_java_object
+from pyspark_elastic.util import helper, make_es_config
 
 
-class EsJsonRDD(RDD):
-	def __init__(self, ctx, resource=None, query=None, **kwargs):
+class EsRDD(RDD):
+	def __init__(self, ctx, resource_read=None, query=None, **kwargs):
+		kwargs = make_es_config(kwargs, resource_read=resource_read, query=query)
 		kwargs = as_java_object(ctx._gateway, kwargs)
-		jrdd = helper(ctx).esJsonRDD(ctx._jsc, resource, query, kwargs)
-		super(EsJsonRDD, self).__init__(jrdd, ctx)
+		jrdd = helper(ctx).esJsonRDD(ctx._jsc, kwargs)
+		super(EsRDD, self).__init__(jrdd, ctx)
 
 def saveToEs(rdd, resource=None, **kwargs):
 	saveJsonToEs(rdd.map(dumps), resource, **kwargs)
 
-def saveJsonToEs(rdd, resource=None, **kwargs):
+def saveJsonToEs(rdd, resource_write=None, **kwargs):
+	kwargs = make_es_config(kwargs, resource_write=resource_write)
 	kwargs = as_java_object(rdd.ctx._gateway, kwargs)
-	helper(rdd.ctx).saveJsonToEs(rdd._jrdd, resource, kwargs)
+	helper(rdd.ctx).saveJsonToEs(rdd._jrdd, kwargs)
+
+def _merge_kwargs(d, **kwargs):
+	for k, v in kwargs.items():
+		if v:
+			d[k] = v
+	return d
