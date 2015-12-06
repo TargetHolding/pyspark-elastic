@@ -21,6 +21,7 @@ def helper(ctx):
 
     return _helper
 
+
 def make_es_config(d, **kwargs):
     cfg = {}
     add_es_config(cfg, d)

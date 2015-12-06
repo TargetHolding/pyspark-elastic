@@ -32,9 +32,11 @@ class EsRDD(RDD):
 		jrdd = helper(ctx).esJsonRDD(ctx._jsc, kwargs)
 		super(EsRDD, self).__init__(jrdd, ctx)
 
-	def loads(self, attr_dict=False):
-		loads = AttrDict.loads if attr_dict else json.loads
-		return self.mapValues(loads)
+	def loads(self):
+		return self.mapValues(json.loads)
+
+	def loadsObj(self):
+		return self.mapValues(AttrDict.loads)
 
 def saveToEs(rdd, resource_write=None, **kwargs):
 	saveJsonToEs(rdd.map(json.dumps), resource_write, **kwargs)
@@ -44,8 +46,7 @@ def saveJsonToEs(rdd, resource_write=None, **kwargs):
 	kwargs = as_java_object(rdd.ctx._gateway, kwargs)
 	helper(rdd.ctx).saveJsonToEs(rdd._jrdd, kwargs)
 
-def _merge_kwargs(d, **kwargs):
-	for k, v in kwargs.items():
-		if v:
-			d[k] = v
-	return d
+def saveRawToEs(rdd, resource_write=None, **kwargs):
+	kwargs = make_es_config(kwargs, resource_write=resource_write)
+	kwargs = as_java_object(rdd.ctx._gateway, kwargs)
+	helper(rdd.ctx).saveRawToEs(rdd._jrdd, kwargs)
