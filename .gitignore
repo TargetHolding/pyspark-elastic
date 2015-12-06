@@ -1,6 +1,7 @@
 # maven / sbt
 target
 .cache
+bin
 
 # python
 *.pyc
