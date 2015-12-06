@@ -39,14 +39,9 @@ class EsRDD(RDD):
 		return self.mapValues(AttrDict.loads)
 
 def saveToEs(rdd, resource_write=None, **kwargs):
-	saveJsonToEs(rdd.map(json.dumps), resource_write, **kwargs)
+	saveJsonToEs(rdd.map(json.dumps), resource_write=resource_write, **kwargs)
 
 def saveJsonToEs(rdd, resource_write=None, **kwargs):
 	kwargs = make_es_config(kwargs, resource_write=resource_write)
 	kwargs = as_java_object(rdd.ctx._gateway, kwargs)
 	helper(rdd.ctx).saveJsonToEs(rdd._jrdd, kwargs)
-
-def saveRawToEs(rdd, resource_write=None, **kwargs):
-	kwargs = make_es_config(kwargs, resource_write=resource_write)
-	kwargs = as_java_object(rdd.ctx._gateway, kwargs)
-	helper(rdd.ctx).saveRawToEs(rdd._jrdd, kwargs)
