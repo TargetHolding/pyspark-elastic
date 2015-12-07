@@ -54,7 +54,7 @@ spark-submit \
 Using with PySpark shell
 ------------------------
 
-Replace `spark-submit` with `pyspark` to start the interactive shell and don't provide a script as argument and then import PySpark Cassandra. Note that when performing this import the `sc` variable in pyspark is augmented with the `esRDD(...)` and `esJsonRDD(...)` methods.
+Replace `spark-submit` with `pyspark` to start the interactive shell and don't provide a script as argument and then import PySpark Elastic. Note that when performing this import the `sc` variable in pyspark is augmented with the `esRDD(...)` and `esJsonRDD(...)` methods.
 
 ```python
 import pyspark_elastic
@@ -99,16 +99,24 @@ The PySpark Elastic API aims to stay close to the Java / Scala APIs provided by 
 
 ### pyspark_elastic.EsSparkContext
 
-A `CassandraSparkContext` is very similar to a regular `SparkContext`. It is created in the same way, can be used to read files, parallelize local data, broadcast a variable, etc. See the [Spark Programming Guide](https://spark.apache.org/docs/1.2.0/programming-guide.html) for more details. *But* it exposes additional methods:
+A `EsSparkContext` is very similar to a regular `SparkContext`. It is created in the same way, can be used to read files, parallelize local data, broadcast a variable, etc. See the [Spark Programming Guide](https://spark.apache.org/docs/1.2.0/programming-guide.html) for more details. *But* it exposes additional methods:
 
-* ``esRDD(resource, query, **kwargs)``:	Returns a CassandraRDD for the given keyspace and table. Additional arguments which can be provided:
+* ``esRDD(resource_read, query, **kwargs)``: Returns a EsRDD for the resource and query with the JSON documents from Elastic parsed with `json.loads` (or from `cjson` or `ujson` if available). Arguments which can be provided:
 
   * `resource` is the index and document type seperated by a forward slash (/)
   * `query` is the query string to apply in searching Elastic Search for data for in the RDD
+  * `**kwargs`: any configuration item listed in the [Elastic Search documentation]( https://www.elastic.co/guide/en/elasticsearch/hadoop/current/configuration.html), see also [the configuration section below](#configuration)
+
+* ``esObjRDD(resource_read, query, **kwargs)``: As `esRDD(...)`, but the RDD contains JSON documents from Elastic parsed with `json.loads` where each `dict` is parsed into a `pyspark_elastic.types.AttrDict` so that object can be accessed by attributed as well as key: e.g. `sc.esObjRead(...).first().field`.
+
+* ``esJsonRDD(resource_read, query, **kwargs)``: As `esRDD(...)`, but the RDD contains JSON documents as strings.
+
+#### Configuration
+The configuration options from [Elastic Search documentation]( https://www.elastic.co/guide/en/elasticsearch/hadoop/current/configuration.html) can be provided to the methods above _without_ the `es.` prefix _and with_ underscores instead of dots. The latter allows using normal keywords instead of resorting to constructs such as `esRDD(..., **{'es.configuration.option': 'xyz'})` and use `esRDD(..., configuration_option='xyx')`.
 
 ### pyspark.RDD
 
-PySpark Cassandra supports saving arbitrary RDD's to Cassandra using:
+PySpark Elastic supports saving arbitrary RDD's to Elastic using:
 
 * ``rdd.saveToEs(resource, **kwargs)``: Saves an RDD to resource (which is a / separated index and document type) by dumping the RDD elements using ``json.dumps``.
 * ``rdd.saveJsonToEs(resource, **kwargs)``: Saves an RDD to resource (which is a / separated index and document type) directly. The RDD must contain strings.
