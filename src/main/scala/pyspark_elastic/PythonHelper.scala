@@ -16,7 +16,7 @@ import pyspark_util.Pickling.toUnpickleableRDD
 
 class PythonHelper() {
 
-  Pickling.register()
+  implicit val pickling = new Pickling()
 
   def esJsonRDD(sc: JavaSparkContext, cfg: JMap[String, String]) = {
     JavaRDD.fromRDD(sc.sc.esJsonRDD(config(cfg)).pickle())
