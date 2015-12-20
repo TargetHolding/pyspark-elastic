@@ -19,17 +19,11 @@ from pyspark_elastic.rdd import EsRDD
 
 def monkey_patch_sc(sc):
 	sc.__class__ = EsSparkContext
-	sc.__dict__["esJsonRDD"] = partial(EsSparkContext.esJsonRDD, sc)
-	sc.__dict__["esJsonRDD"].__doc__ = EsSparkContext.esJsonRDD.__doc__
+	sc.__dict__["esRDD"] = partial(EsSparkContext.esRDD, sc)
+	sc.__dict__["esRDD"].__doc__ = EsSparkContext.esRDD.__doc__
 
 
 class EsSparkContext(pyspark.context.SparkContext):
 
 	def esRDD(self, resource_read=None, query='', **kwargs):
-		return self.esJsonRDD(resource_read, query, **kwargs).loads()
-
-	def esObjRDD(self, resource_read=None, query='', **kwargs):
-		return self.esJsonRDD(resource_read, query, **kwargs).loadsObj()
-
-	def esJsonRDD(self, resource_read=None, query='', **kwargs):
 		return EsRDD(self, resource_read, query, **kwargs)

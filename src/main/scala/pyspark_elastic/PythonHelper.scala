@@ -19,7 +19,7 @@ class PythonHelper() {
   implicit val pickling = new Pickling()
 
   def esJsonRDD(sc: JavaSparkContext, cfg: JMap[String, String]) = {
-    JavaRDD.fromRDD(sc.sc.esJsonRDD(config(cfg)).pickle())
+    JavaRDD.fromRDD(sc.sc.esJsonRDD(config(cfg)))
   }
 
   def saveJsonToEs(rdd: JavaRDD[Array[Byte]], cfg: JMap[String, String]) = {

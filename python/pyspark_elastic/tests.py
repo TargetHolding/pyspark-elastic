@@ -42,18 +42,20 @@ class PysparkElasticTestCase(unittest.TestCase):
         self.index.delete()
 
 
-    def rdd(self, query='', doc_type=None, cache=True, **kwargs):
+    def rdd(self, query='', doc_type=None, cache=True, as_json=True, **kwargs):
         doc_type = doc_type or self.TestDoc._doc_type.name
         rdd = self.sc.esRDD(self.index._name + '/' + doc_type, query, **kwargs)
+        if as_json:
+            rdd = rdd.loads()
         if cache:
             rdd = rdd.cache()
         return rdd
 
 
 
-class ReadTests(PysparkElasticTestCase):
+class TestsWithData(PysparkElasticTestCase):
     def setUp(self):
-        super(ReadTests, self).setUp()
+        super(TestsWithData, self).setUp()
 
         self.docs = [
             self.TestDoc(title='doc-' + str(i))
@@ -67,6 +69,8 @@ class ReadTests(PysparkElasticTestCase):
         self.assertEqual(len(errors), 0)
 
 
+
+class ReadTests(TestsWithData):
     def test_first(self):
         doc = self.rdd().first()
         self.assertTrue(doc != None)
@@ -255,7 +259,7 @@ class WriteTests(PysparkElasticTestCase):
         self.assertEqual(self.sc.esRDD('test-2/docs').count(), 3)
 
         self.assertEqual(
-            set(d['body'] for d in self.sc.esRDD('test-1/docs').collectAsMap().values()),
+            set(d['body'] for d in self.sc.esRDD('test-1/docs').loads().collectAsMap().values()),
             set(d['body'] for d in docs1)
         )
 
@@ -281,7 +285,7 @@ class WriteTests(PysparkElasticTestCase):
         self.assertEqual(self.sc.esRDD('test-2015-12/docs').count(), 4)
 
         self.assertEqual(
-            set(d['body'] for d in self.sc.esRDD('test-2015-11/docs').collectAsMap().values()),
+            set(d['body'] for d in self.sc.esRDD('test-2015-11/docs').loads().collectAsMap().values()),
             set(d['body'] for d in docs_nov)
         )
 
@@ -327,5 +331,5 @@ class WriteTests(PysparkElasticTestCase):
 
 if __name__ == '__main__':
     unittest.main()
-    # suite = unittest.TestLoader().loadTestsFromTestCase(ReadTests)
+    # suite = unittest.TestLoader().loadTestsFromTestCase(PushDownTests)
     # unittest.TextTestRunner().run(suite)

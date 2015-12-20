@@ -9,6 +9,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from pyspark.rdd import RDD
+from pyspark.serializers import NoOpSerializer
+from pyspark_elastic.types import as_java_object, AttrDict
+from pyspark_elastic.util import helper, make_es_config
+from itertools import izip
+
 
 try:
 	import cjson as json
@@ -20,9 +26,6 @@ except ImportError:
 	except ImportError:
 		import json
 
-from pyspark.rdd import RDD
-from pyspark_elastic.types import as_java_object, AttrDict
-from pyspark_elastic.util import helper, make_es_config
 
 
 class EsRDD(RDD):
@@ -30,7 +33,18 @@ class EsRDD(RDD):
 		kwargs = make_es_config(kwargs, resource_read=resource_read, query=query)
 		kwargs = as_java_object(ctx._gateway, kwargs)
 		jrdd = helper(ctx).esJsonRDD(ctx._jsc, kwargs)
-		super(EsRDD, self).__init__(jrdd, ctx)
+		rdd = RDD(jrdd, ctx, NoOpSerializer())
+
+		# read the rdd in batches of two (first key then value / doc)
+		def pairwise(iterable):
+			iterator = iter(iterable)
+			return izip(iterator, iterator)
+		kvRdd = rdd.mapPartitions(pairwise, True)
+
+		super(EsRDD, self).__init__(kvRdd._jrdd, ctx)
+
+	def esCount(self):
+		return helper(self.ctx).esCount(self._jrdd)
 
 	def loads(self):
 		return self.mapValues(json.loads)
