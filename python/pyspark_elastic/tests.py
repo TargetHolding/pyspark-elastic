@@ -12,8 +12,6 @@ from pyspark.rdd import RDD
 from pyspark_elastic.context import EsSparkContext
 
 
-connections.create_connection()
-
 class PysparkElasticTestCase(unittest.TestCase):
     class TestDoc(DocType):
         title = String()
@@ -330,6 +328,7 @@ class WriteTests(PysparkElasticTestCase):
 
 
 if __name__ == '__main__':
+    connections.create_connection()
     unittest.main()
     # suite = unittest.TestLoader().loadTestsFromTestCase(PushDownTests)
     # unittest.TextTestRunner().run(suite)
