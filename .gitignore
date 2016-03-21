@@ -2,6 +2,7 @@
 target
 .cache
 bin
+.sp-creds.txt
 
 # python
 *.pyc
