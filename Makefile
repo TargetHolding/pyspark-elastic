@@ -102,7 +102,7 @@ define test-integration-for-version
 			--master local[*] \
 			--driver-memory 512m \
 			--jars target/scala-2.10/pyspark-elastic-assembly-$(VERSION).jar \
-			--py-files target/pyspark_elastic-$(VERSION)-py2.7.egg \
+			--py-files target/scala-2.10/pyspark-elastic-assembly-$(VERSION).jar \
 			python/pyspark_elastic/tests.py
 			
 	echo ======================================================================
