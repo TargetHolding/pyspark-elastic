@@ -63,7 +63,9 @@ test-integration-matrix: \
 	test-integration-spark-1.4.1 \
 	test-integration-spark-1.5.0 \
 	test-integration-spark-1.5.1 \
-	test-integration-spark-1.5.2
+	test-integration-spark-1.5.2 \
+	test-integration-spark-1.6.0 \
+	test-integration-spark-1.6.1
 
 test-travis:
 	$(call test-integration-for-version,$$SPARK_VERSION,$$SPARK_PACKAGE_TYPE)
@@ -80,6 +82,12 @@ test-integration-spark-1.5.1:
 test-integration-spark-1.5.2:
 	$(call test-integration-for-version,1.5.2,hadoop2.6)
 
+test-integration-spark-1.6.0:
+	$(call test-integration-for-version,1.6.0,hadoop2.6)
+
+test-integration-spark-1.6.1:
+	$(call test-integration-for-version,1.6.1,hadoop2.6)
+
 define test-integration-for-version
 	echo ======================================================================
 	echo testing integration with spark-$1
@@ -92,7 +100,7 @@ define test-integration-for-version
 	source venv/bin/activate ; \
 		lib/spark-$1-bin-$2/bin/spark-submit \
 			--master local[*] \
-			--driver-memory 256m \
+			--driver-memory 512m \
 			--jars target/scala-2.10/pyspark-elastic-assembly-$(VERSION).jar \
 			--py-files target/pyspark_elastic-$(VERSION)-py2.7.egg \
 			python/pyspark_elastic/tests.py
