@@ -1,5 +1,5 @@
 SHELL = /bin/bash
-VERSION = $(shell grep version build.sbt | sed 's/version := //g' | sed 's/"//g')
+VERSION = $(shell cat version.txt)
 
 .PHONY: clean clean-pyc clean-dist dist test-travis
 
@@ -101,15 +101,31 @@ define test-integration-for-version
 endef
 
 
-dist: dist-python dist-scala
 
-dist-python:
-	python/setup.py bdist_egg -d ../target
-	rm -rf python/build/
-	rm -rf python/*.egg-info
-
-dist-scala:
-	sbt compile assembly
+dist: clean-pyc
+	sbt assembly
+	cd python ; \
+		find . -mindepth 2 -name '*.py' -print | \
+		zip ../target/scala-2.10/pyspark-elastic-assembly-$(VERSION).jar -@
 
 
 all: clean dist
+
+
+publish: clean
+	# use spark packages to create the distribution
+	sbt spDist
+
+	# push the python source files into the jar
+	cd python ; \
+		find . -mindepth 2 -name '*.py' -print | \
+		zip ../target/scala-2.10/pyspark-elastic_2.10-$(VERSION).jar -@
+
+	# copy it to the right name, and update the jar in the zip
+	cp target/scala-2.10/pyspark-elastic{_2.10,}-$(VERSION).jar
+	cd target/scala-2.10 ;\
+		zip ../pyspark-elastic-$(VERSION).zip pyspark-elastic-$(VERSION).jar
+
+	# send the package to spark-packages
+	spark-package publish -c ".sp-creds.txt" -n "TargetHolding/pyspark-elastic" -v $(VERSION) -f . -z target/pyspark-elastic-$(VERSION).zip
+

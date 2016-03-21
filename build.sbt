@@ -1,6 +1,6 @@
 name := "pyspark-elastic"
 
-version := "0.3.1"
+version := io.Source.fromFile("version.txt").mkString.trim
 
 organization := "TargetHolding"
 
