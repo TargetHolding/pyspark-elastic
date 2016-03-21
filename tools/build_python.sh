@@ -1,1 +1,0 @@
-../pyspark-util/tools/build_python.sh
