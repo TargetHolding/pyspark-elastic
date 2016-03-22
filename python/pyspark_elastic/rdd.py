@@ -13,7 +13,11 @@ from pyspark.rdd import RDD
 from pyspark.serializers import NoOpSerializer
 from pyspark_elastic.types import as_java_object, AttrDict
 from pyspark_elastic.util import helper, make_es_config
-from itertools import izip
+
+try:
+	from itertools import izip
+except ImportError:
+	izip = zip
 
 
 try:
@@ -47,10 +51,10 @@ class EsRDD(RDD):
 		return helper(self.ctx).esCount(self._jrdd)
 
 	def loads(self):
-		return self.mapValues(json.loads)
+		return self.mapValues(lambda v: json.loads(v.decode('utf-8')))
 
 	def loadsObj(self):
-		return self.mapValues(AttrDict.loads)
+		return self.mapValues(lambda v: AttrDict.loads(v.decode('utf-8')))
 
 def saveToEs(rdd, resource_write=None, **kwargs):
 	saveJsonToEs(rdd.map(json.dumps), resource_write=resource_write, **kwargs)
