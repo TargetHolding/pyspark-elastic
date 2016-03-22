@@ -21,7 +21,14 @@ PySpark Elastic provides python support for Apache Spark's Resillient Distribute
 Compatibility
 -------------
 
-PySpark Elastic is tested to be compatible with Spark 1.4 and 1.5. Feedback on (in-)compatibility is much appreciated.
+### Spark
+PySpark Elastic is tested to be compatible with Spark 1.4, 1.5 and 1.6. Feedback on (in-)compatibility is much appreciated.
+
+### Elastic Search
+PySpark Elastic is tested with Elastic Search 2.2.
+
+### Python
+PySpark Elastic is tested with Python 2.7 and Python 3.4.
 
 
 Using with PySpark
